@@ -1,13 +1,15 @@
 export default function settings() {
     return {
         variables: {
-            participant: 'USUBJID',
+            id: 'USUBJID',
             arm: 'ARM',
             visit: 'VISIT',
-            visit_numeric: 'VISITNUM',
+            visit_order: 'VISITNUM',
+            measure: 'LBTEST',
             result: 'LBSTRESN',
         },
-        width: null, // defined in ./layout
-        height: null, // define in ./layout
+        subset: null, // array of objects
+        width: null, // integer (pixels) - defined in ./layout
+        height: null, // integer (pixels) - defined in ./layout
     };
 }

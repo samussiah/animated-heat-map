@@ -1,20 +1,13 @@
 fetch('./lb.csv')
     .then(response => response.text())
-    .then(text => d3.csvParse(text))
+    .then(text => d3.csvParse(text, d3.autoType))
     .then(data => {
         const ahm = animatedHeatMap(
             data,
             '#container',
             {
-                variables: {
-                    participant: 'USUBJID',
-                    arm: 'ARM',
-                    visit: 'VISIT',
-                    visitn: 'VISITNUM',
-                    result: 'LBSTRESN',
-                },
                 subset: [
-                    { key: 'LBTEST', values: ['Albumin'] },
+                    { key: 'LBTEST', value: ['Albumin'] },
                 ],
             }
         );
