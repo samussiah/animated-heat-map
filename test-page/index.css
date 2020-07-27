@@ -23,3 +23,17 @@ body > * {
 #container {
     display: inline-block;
 }
+
+/* animated-heat-map */
+
+.animated-heat-map {
+    position: relative;
+}
+.ahm-hidden {
+    display: none !important;
+}
+.ahm-legend {
+    position: absolute;
+    top: 0;
+    right: 0;
+}

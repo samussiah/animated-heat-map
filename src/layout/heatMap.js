@@ -1,20 +1,18 @@
 import arcGenerator from './heatMap/arcGenerator';
 
 export default function heatMap(title = 'All Participants') {
+    const container =
+        title === 'All Participants'
+            ? this.elements.heatMap
+            : this.elements.heatMaps.append('div').classed('ahm-heat-map', true);
     const dimension =
         title === 'All Participants' ? this.settings.minDimension : this.settings.smallMultipleSize;
 
-    // div
-    const div = this.elements.main
-        .append('div')
-        .classed('ahm-heat-map', true)
-        .style('display', 'inline-block');
-
     // header
-    const header = div.append('h3').classed('ahm-header', true).text(title);
+    const header = container.append('h3').classed('ahm-header', true).text(title);
 
     // svg
-    const svg = div
+    const svg = container
         .append('svg')
         .classed('ahm-svg', true)
         .attr('width', dimension)
@@ -48,7 +46,6 @@ export default function heatMap(title = 'All Participants') {
         .attr('stroke-opacity', 0.25);
 
     return {
-        div,
         header,
         svg,
         g,

@@ -1,4 +1,5 @@
-import arcGenerator from './layout/arcGenerator';
+import controls from './layout/controls';
+import legend from './layout/legend';
 import heatMap from './layout/heatMap';
 import resize from './layout/resize';
 
@@ -12,11 +13,34 @@ export default function layout() {
     // container
     this.elements.main = this.elements.parent.append('div').classed('animated-heat-map', true);
 
-    // arc generator
-    this.arcGenerator = arcGenerator.call(this);
+    //controls
+    this.elements.controls = this.elements.main.append('div').classed('ahm-controls', true);
+
+    this.controls = controls.call(this);
+
+    // legend
+    this.elements.legend = this.elements.main.append('div').classed('ahm-legend', true);
+
+    // main heat map
+    this.elements.heatMap = this.elements.main
+        .append('div')
+        .classed('ahm-heat-map', true)
+        .classed('ahm-hidden', this.settings.view !== 'heatMap');
 
     this.heatMap = {
-        elements: heatMap.call(this),
+        elements: Object.assign({ main: this.elements.heatMap }, heatMap.call(this)),
+    };
+
+    // small multiples
+    this.elements.heatMaps = this.elements.main
+        .append('div')
+        .classed('ahm-heat-maps', true)
+        .classed('ahm-hidden', this.settings.view !== 'heatMaps');
+
+    this.heatMaps = {
+        elements: {
+            main: this.elements.heatMaps,
+        },
     };
 
     window.addEventListener('resize', resize.bind(this));

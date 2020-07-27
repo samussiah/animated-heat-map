@@ -8,6 +8,8 @@ export default function settings() {
             measure: 'LBTEST',
             result: 'LBSTRESN',
         },
+        view: 'heatMap',
+        measure: null,
         subset: null, // array of objects
         width: null, // integer (pixels) - defined in ./layout
         height: null, // integer (pixels) - defined in ./layout
