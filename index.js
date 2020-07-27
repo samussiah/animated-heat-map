@@ -17,6 +17,8 @@
                 measure: 'LBTEST',
                 result: 'LBSTRESN',
             },
+            view: 'heatMap',
+            measure: null,
             subset: null,
             // array of objects
             width: null,
@@ -96,15 +98,52 @@
         });
     }
 
-    function arcGenerator() {
-        var arcGenerator = d3
-            .arc()
-            .innerRadius(this.settings.minDimension / 8)
-            .outerRadius(this.settings.minDimension / 2 - 1);
-        return arcGenerator;
+    function heatMapToggle() {
+        var _this = this;
+
+        var container = this.elements.controls
+            .append('div')
+            .classed('ahm-control ahm-control--heat-map-toggle', true);
+        var inputs = container
+            .selectAll('label')
+            .data([
+                {
+                    prop: 'heatMap',
+                    class: 'ahm-heat-map',
+                    label: 'animated heat map',
+                },
+                {
+                    prop: 'heatMaps',
+                    class: 'ahm-heat-maps',
+                    label: 'heat maps by visit',
+                },
+            ])
+            .join('label')
+            .text(function (d) {
+                return 'View '.concat(d.label);
+            })
+            .append('input')
+            .attr('type', 'radio')
+            .property('checked', function (d) {
+                return d.prop === _this.settings.view;
+            });
+        inputs.on('change', function (d) {
+            _this.settings.view = d.prop;
+            inputs.property('checked', function (d) {
+                return d.prop === _this.settings.view;
+            });
+
+            _this.elements.heatMap.classed('ahm-hidden', _this.settings.view !== 'heatMap');
+
+            _this.elements.heatMaps.classed('ahm-hidden', _this.settings.view !== 'heatMaps');
+        });
     }
 
-    function arcGenerator$1(dimension) {
+    function controls() {
+        heatMapToggle.call(this);
+    }
+
+    function arcGenerator(dimension) {
         var arcGenerator = d3
             .arc()
             .innerRadius(dimension / 8)
@@ -115,19 +154,18 @@
     function heatMap() {
         var title =
             arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'All Participants';
+        var container =
+            title === 'All Participants'
+                ? this.elements.heatMap
+                : this.elements.heatMaps.append('div').classed('ahm-heat-map', true);
         var dimension =
             title === 'All Participants'
                 ? this.settings.minDimension
-                : this.settings.smallMultipleSize; // div
+                : this.settings.smallMultipleSize; // header
 
-        var div = this.elements.main
-            .append('div')
-            .classed('ahm-heat-map', true)
-            .style('display', 'inline-block'); // header
+        var header = container.append('h3').classed('ahm-header', true).text(title); // svg
 
-        var header = div.append('h3').classed('ahm-header', true).text(title); // svg
-
-        var svg = div
+        var svg = container
             .append('svg')
             .classed('ahm-svg', true)
             .attr('width', dimension)
@@ -158,29 +196,46 @@
             .attr('stroke-width', '5px')
             .attr('stroke-opacity', 0.25);
         return {
-            div: div,
             header: header,
             svg: svg,
             g: g,
             visitText: visitText,
             pupil: pupil,
-            arcGenerator: arcGenerator$1.call(this, dimension),
+            arcGenerator: arcGenerator.call(this, dimension),
         };
     }
 
     function resize() {
         var _this = this;
 
+        // Update dimensions.
         this.settings.width = this.elements.parent.node().clientWidth;
         this.settings.height = (this.settings.width / 16) * 9;
         this.settings.minDimension = Math.min(this.settings.width, this.settings.height);
-        this.settings.smallMultipleSize = this.settings.minDimension / 4;
-        this.arcGenerator = arcGenerator.call(this);
+        this.settings.smallMultipleSize = this.settings.minDimension / 4; // Update main heat map.
+
+        this.heatMap.elements.svg
+            .attr('width', this.settings.minDimension)
+            .attr('height', this.settings.minDimension);
+        this.heatMap.elements.g.attr(
+            'transform',
+            'translate(' +
+                this.settings.minDimension / 2 +
+                ',' +
+                this.settings.minDimension / 2 +
+                ')'
+        );
+        this.heatMap.elements.visitText
+            .attr('x', -this.settings.minDimension / 2)
+            .attr('y', -this.settings.minDimension / 2);
+        this.heatMap.iris.attr('d', arcGenerator.call(this, this.settings.minDimension));
+        this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 8); // Update small multiples.
+
         this.heatMaps.forEach(function (heatMap) {
-            heatMap.svg
+            heatMap.elements.svg
                 .attr('width', _this.settings.smallMultipleSize)
                 .attr('height', _this.settings.smallMultipleSize);
-            heatMap.g.attr(
+            heatMap.elements.g.attr(
                 'transform',
                 'translate(' +
                     _this.settings.smallMultipleSize / 2 +
@@ -188,8 +243,11 @@
                     _this.settings.smallMultipleSize / 2 +
                     ')'
             );
-            heatMap.iris.attr('d', heatMap.arcGenerator.call(_this));
-            heatMap.pupil.attr('r', _this.settings.smallMultipleSize / 8);
+            heatMap.elements.visitText
+                .attr('x', -_this.settings.minDimension / 2)
+                .attr('y', -_this.settings.minDimension / 2);
+            heatMap.iris.attr('d', arcGenerator.call(_this, _this.settings.smallMultipleSize));
+            heatMap.elements.pupil.attr('r', _this.settings.smallMultipleSize / 8);
         });
     }
 
@@ -200,13 +258,223 @@
         this.settings.minDimension = Math.min(this.settings.width, this.settings.height);
         this.settings.smallMultipleSize = this.settings.minDimension / 4; // container
 
-        this.elements.main = this.elements.parent.append('div').classed('animated-heat-map', true); // arc generator
+        this.elements.main = this.elements.parent.append('div').classed('animated-heat-map', true); //controls
 
-        this.arcGenerator = arcGenerator.call(this);
+        this.elements.controls = this.elements.main.append('div').classed('ahm-controls', true);
+        this.controls = controls.call(this); // legend
+
+        this.elements.legend = this.elements.main.append('div').classed('ahm-legend', true); // main heat map
+
+        this.elements.heatMap = this.elements.main
+            .append('div')
+            .classed('ahm-heat-map', true)
+            .classed('ahm-hidden', this.settings.view !== 'heatMap');
         this.heatMap = {
-            elements: heatMap.call(this),
+            elements: Object.assign(
+                {
+                    main: this.elements.heatMap,
+                },
+                heatMap.call(this)
+            ),
+        }; // small multiples
+
+        this.elements.heatMaps = this.elements.main
+            .append('div')
+            .classed('ahm-heat-maps', true)
+            .classed('ahm-hidden', this.settings.view !== 'heatMaps');
+        this.heatMaps = {
+            elements: {
+                main: this.elements.heatMaps,
+            },
         };
         window.addEventListener('resize', resize.bind(this));
+    }
+
+    function ramp(color) {
+        var n = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 256;
+        //DOM.canvas(n, 1);
+        var canvas = document.createElement('canvas');
+        canvas.width = n;
+        canvas.height = 1;
+        var context = canvas.getContext('2d');
+
+        for (var i = 0; i < n; ++i) {
+            context.fillStyle = color(i / (n - 1));
+            context.fillRect(i, 0, 1, 1);
+        }
+
+        return canvas;
+    }
+
+    function legend() {
+        var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+            color = _ref.color,
+            title = _ref.title,
+            _ref$tickSize = _ref.tickSize,
+            tickSize = _ref$tickSize === void 0 ? 6 : _ref$tickSize,
+            _ref$width = _ref.width,
+            width = _ref$width === void 0 ? 320 : _ref$width,
+            _ref$height = _ref.height,
+            height = _ref$height === void 0 ? 44 + tickSize : _ref$height,
+            _ref$marginTop = _ref.marginTop,
+            marginTop = _ref$marginTop === void 0 ? 18 : _ref$marginTop,
+            _ref$marginRight = _ref.marginRight,
+            marginRight = _ref$marginRight === void 0 ? 0 : _ref$marginRight,
+            _ref$marginBottom = _ref.marginBottom,
+            marginBottom = _ref$marginBottom === void 0 ? 16 + tickSize : _ref$marginBottom,
+            _ref$marginLeft = _ref.marginLeft,
+            marginLeft = _ref$marginLeft === void 0 ? 0 : _ref$marginLeft,
+            _ref$ticks = _ref.ticks,
+            ticks = _ref$ticks === void 0 ? width / 64 : _ref$ticks,
+            tickFormat = _ref.tickFormat,
+            tickValues = _ref.tickValues;
+
+        var svg = d3
+            .create('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('viewBox', [0, 0, width, height])
+            .style('overflow', 'visible')
+            .style('display', 'block');
+
+        var tickAdjust = function tickAdjust(g) {
+            return g.selectAll('.tick line').attr('y1', marginTop + marginBottom - height);
+        };
+
+        var x; // Continuous
+
+        if (color.interpolate) {
+            var n = Math.min(color.domain().length, color.range().length);
+            x = color
+                .copy()
+                .rangeRound(d3.quantize(d3.interpolate(marginLeft, width - marginRight), n));
+            svg.append('image')
+                .attr('x', marginLeft)
+                .attr('y', marginTop)
+                .attr('width', width - marginLeft - marginRight)
+                .attr('height', height - marginTop - marginBottom)
+                .attr('preserveAspectRatio', 'none')
+                .attr(
+                    'xlink:href',
+                    ramp
+                        .call(this, color.copy().domain(d3.quantize(d3.interpolate(0, 1), n)))
+                        .toDataURL()
+                );
+        } // Sequential
+        else if (color.interpolator) {
+            x = Object.assign(
+                color.copy().interpolator(d3.interpolateRound(marginLeft, width - marginRight)),
+                {
+                    range: function range() {
+                        return [marginLeft, width - marginRight];
+                    },
+                }
+            );
+            svg.append('image')
+                .attr('x', marginLeft)
+                .attr('y', marginTop)
+                .attr('width', width - marginLeft - marginRight)
+                .attr('height', height - marginTop - marginBottom)
+                .attr('preserveAspectRatio', 'none')
+                .attr('xlink:href', ramp.call(this, color.interpolator()).toDataURL()); // scaleSequentialQuantile doesn’t implement ticks or tickFormat.
+
+            if (!x.ticks) {
+                if (tickValues === undefined) {
+                    var _n = Math.round(ticks + 1);
+
+                    tickValues = d3.range(_n).map(function (i) {
+                        return d3.quantile(color.domain(), i / (_n - 1));
+                    });
+                }
+
+                if (typeof tickFormat !== 'function') {
+                    tickFormat = d3.format(tickFormat === undefined ? ',f' : tickFormat);
+                }
+            }
+        } // Threshold
+        else if (color.invertExtent) {
+            var thresholds = color.thresholds
+                ? color.thresholds() // scaleQuantize
+                : color.quantiles
+                ? color.quantiles() // scaleQuantile
+                : color.domain(); // scaleThreshold
+
+            var thresholdFormat =
+                tickFormat === undefined
+                    ? function (d) {
+                          return d;
+                      }
+                    : typeof tickFormat === 'string'
+                    ? d3.format(tickFormat)
+                    : tickFormat;
+            x = d3
+                .scaleLinear()
+                .domain([-1, color.range().length - 1])
+                .rangeRound([marginLeft, width - marginRight]);
+            svg.append('g')
+                .selectAll('rect')
+                .data(color.range())
+                .join('rect')
+                .attr('x', function (d, i) {
+                    return x(i - 1);
+                })
+                .attr('y', marginTop)
+                .attr('width', function (d, i) {
+                    return x(i) - x(i - 1);
+                })
+                .attr('height', height - marginTop - marginBottom)
+                .attr('fill', function (d) {
+                    return d;
+                });
+            tickValues = d3.range(thresholds.length);
+
+            tickFormat = function tickFormat(i) {
+                return thresholdFormat(thresholds[i], i);
+            };
+        } // Ordinal
+        else {
+            x = d3
+                .scaleBand()
+                .domain(color.domain())
+                .rangeRound([marginLeft, width - marginRight]);
+            svg.append('g')
+                .selectAll('rect')
+                .data(color.domain())
+                .join('rect')
+                .attr('x', x)
+                .attr('y', marginTop)
+                .attr('width', Math.max(0, x.bandwidth() - 1))
+                .attr('height', height - marginTop - marginBottom)
+                .attr('fill', color);
+
+            tickAdjust = function tickAdjust() {};
+        }
+
+        svg.append('g')
+            .attr('transform', 'translate(0,'.concat(height - marginBottom, ')'))
+            .call(
+                d3
+                    .axisBottom(x)
+                    .ticks(ticks, typeof tickFormat === 'string' ? tickFormat : undefined)
+                    .tickFormat(typeof tickFormat === 'function' ? tickFormat : undefined)
+                    .tickSize(tickSize)
+                    .tickValues(tickValues)
+            )
+            .call(tickAdjust)
+            .call(function (g) {
+                return g.select('.domain').remove();
+            })
+            .call(function (g) {
+                return g
+                    .append('text')
+                    .attr('x', marginLeft)
+                    .attr('y', marginTop + marginBottom - height - 6)
+                    .attr('fill', 'currentColor')
+                    .attr('text-anchor', 'start')
+                    .attr('font-weight', 'bold')
+                    .text(title);
+            });
+        return svg.node();
     }
 
     function textTransition(visitText, text) {
@@ -272,24 +540,10 @@
         };
     }
 
-    function draw() {
+    function smallMultiples() {
         var _this = this;
 
-        this.colorScale = d3.scaleLinear().domain(this.domain).range(['#f7fbff', '#08306b']);
-        Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
-        this.data.byVisit.slice(1).forEach(function (visit) {
-            _this.heatMap.textTransition = textTransition.call(
-                _this,
-                _this.heatMap.textTransition,
-                visit.visit
-            );
-            _this.heatMap.transition = transitionToNextVisit.call(
-                _this,
-                _this.heatMap.transition,
-                visit.visit_order
-            );
-        });
-        this.heatMaps = this.data.byVisit.map(function (visit, i) {
+        var heatMaps = this.data.byVisit.map(function (visit, i) {
             visit.elements = heatMap.call(_this, visit.visit); // One arc per ID; constant arc length
 
             _this.data.nest.forEach(function (d) {
@@ -317,6 +571,36 @@
             var heatMap$2 = heatMap$1.call(_this, visit, i);
             return Object.assign(visit, heatMap$2);
         });
+        return heatMaps;
+    }
+
+    function draw() {
+        var _this = this;
+
+        this.colorScale = d3.scaleLinear().domain(this.domain).range(['#f7fbff', '#08306b']); // Draw legend.
+
+        this.elements.legend.node().appendChild(
+            legend({
+                color: this.colorScale,
+                title: this.settings.measure,
+            })
+        ); // Draw animated chart.
+
+        Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
+        this.data.byVisit.slice(1).forEach(function (visit) {
+            _this.heatMap.textTransition = textTransition.call(
+                _this,
+                _this.heatMap.textTransition,
+                visit.visit
+            );
+            _this.heatMap.transition = transitionToNextVisit.call(
+                _this,
+                _this.heatMap.transition,
+                visit.visit_order
+            );
+        }); // Draw small multiples.
+
+        this.heatMaps = smallMultiples.call(this);
     }
 
     function animatedHeatMap(data$1) {

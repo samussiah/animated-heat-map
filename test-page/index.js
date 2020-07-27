@@ -6,6 +6,7 @@ fetch('./lb.csv')
             data,
             '#container',
             {
+                measure: 'Albumin (g/L)',
                 subset: [
                     { key: 'LBTEST', value: ['Albumin'] },
                 ],
