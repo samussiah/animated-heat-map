@@ -22,15 +22,29 @@ export default function data() {
     this.data.nest = d3
         .nest()
         .key((d) => d.id)
-        .rollup((group) => group[0].result)
+        //.rollup((group) => group[0].result)
         .entries(this.data.clean);
+
     this.data.byVisit = d3
         .nest()
-        .key((d) => d.visit_order)
+        .key((d) => d.visit + ':|:' + d.visit_order)
         .key((d) => d.id)
         .rollup((group) => group[0].result)
         .entries(this.data.clean)
-        .sort((a, b) => a.key - b.key);
+        .map((d) => {
+            const split = d.key.split(':|:');
+            d.visit = split[0];
+            d.visit_order = +split[1];
+
+            return d;
+        })
+        .sort((a, b) => a.visit_order - b.visit_order);
+
+    this.data.sets = {
+        id: this.data.nest.map((d) => d.key),
+        visit: this.data.byVisit.map((d) => d.visit),
+        visit_order: this.data.byVisit.map((d) => d.visit_order),
+    };
 
     // Calculate domain.
     this.domain = d3.extent(this.data.clean, (d) => d.result);

@@ -1,4 +1,5 @@
 import arcGenerator from './layout/arcGenerator';
+import heatMap from './layout/heatMap';
 import resize from './layout/resize';
 
 export default function layout() {
@@ -13,6 +14,10 @@ export default function layout() {
 
     // arc generator
     this.arcGenerator = arcGenerator.call(this);
+
+    this.heatMap = {
+        elements: heatMap.call(this),
+    };
 
     window.addEventListener('resize', resize.bind(this));
 }
