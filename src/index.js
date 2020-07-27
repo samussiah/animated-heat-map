@@ -3,7 +3,6 @@ import dataManipulation from './data';
 import layout from './layout';
 import draw from './draw';
 
-// TODO: facet by visit
 // TODO: animate by visit or timepoint
 export default function animatedHeatMap(data, element = 'body', settings = {}) {
     const ahm = {
