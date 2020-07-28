@@ -284,9 +284,7 @@
       }).attr('alignment-baseline', 'middle').text(function (d) {
         return d.visit;
       });
-      var t0 = performance.now(); //begin performance test
-
-      cycle();
+      cycle(); // TODO: use chained transitions with transition.on('start', function repeat() {// transitions, recursive shit; })
 
       function cycle() {
         var transition = ahm.data.byVisit.reduce(function (prev, next, i) {
@@ -297,11 +295,7 @@
             return 1 - Math.abs(i - j) / 5;
           });
         }, visits);
-        transition.on('end', function () {
-          //end performance test
-          var t1 = performance.now();
-          console.log("[code] took ".concat(t1 - t0, " milliseconds."));
-        });
+        transition.on('end', cycle);
       }
     }
 
@@ -459,23 +453,23 @@
       Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
       var ahm = this;
       console.log(ahm.data.byVisit);
-      console.log(ahm.heatMap.iris); //cycle();
-      //function cycle() {
-      //    const transition = ahm.data.byVisit.reduce((prev,next,i) => {
-      //        return ahm.heatMap.iris
-      //            .transition()
-      //            //.delay(2000)
-      //            .duration(1000)
-      //            .attr('fill', (d) => {
-      //                const idData = ahm.data.nest.find((di) => di.key === d.data.key);
-      //                const visitDatum = idData.values.find((di) => di.visit_order === next.visit_order);
-      //                if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
-      //                else return ahm.colorScale(d.data.value);
-      //            });
-      //    }, ahm.heatMap.iris);
-      //    transition.on('end', cycle);
-      //}
-      //this.data.byVisit.slice(1).forEach((visit) => {
+      console.log(ahm.heatMap.iris);
+      cycle();
+
+      function cycle() {
+        var transition = ahm.data.byVisit.reduce(function (prev, next, i) {
+          return prev.transition() //.delay(2000)
+          .duration(1000).attr('fill', function (d) {
+            var idData = ahm.data.nest.find(function (di) {
+              return di.key === d.data.key;
+            });
+            var visitDatum = idData.values.find(function (di) {
+              return di.visit_order === next.visit_order;
+            });
+            if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);else return ahm.colorScale(d.data.value);
+          });
+        }, ahm.heatMap.iris); //transition.on('end', cycle);
+      } //this.data.byVisit.slice(1).forEach((visit) => {
       //    this.heatMap.textTransition = callTextTransition.call(
       //        this,
       //        this.heatMap.textTransition,
@@ -489,6 +483,7 @@
       //});
       //// Draw small multiples.
       //this.heatMaps = smallMultiples.call(this);
+
     }
 
     function animatedHeatMap(data$1) {

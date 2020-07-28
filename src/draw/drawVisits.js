@@ -11,11 +11,9 @@ export default function drawVisits() {
         .attr('alignment-baseline', 'middle')
         .text(d => d.visit);
 
-    const t0 = performance.now();
-    //begin performance test
-
     cycle();
 
+    // TODO: use chained transitions with transition.on('start', function repeat() {// transitions, recursive shit; })
     function cycle() {
         const transition = ahm.data.byVisit.reduce((prev,next,i) => {
             return prev.transition().duration(1000)
@@ -23,10 +21,6 @@ export default function drawVisits() {
                 // the 5 visits before and after the current visit index (i) should be visible
                 .attr('fill-opacity', (d,j) => 1-Math.abs(i - j)/5);
         }, visits);
-        transition.on('end', () => {
-            //end performance test
-            const t1 = performance.now();
-            console.log(`[code] took ${t1 - t0} milliseconds.`);
-        });
+        transition.on('end', cycle);
     }
 }

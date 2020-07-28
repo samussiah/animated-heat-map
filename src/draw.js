@@ -25,25 +25,25 @@ export default function draw() {
 
     console.log(ahm.data.byVisit);
     console.log(ahm.heatMap.iris);
-    //cycle();
+    cycle();
 
-    //function cycle() {
-    //    const transition = ahm.data.byVisit.reduce((prev,next,i) => {
-    //        return ahm.heatMap.iris
-    //            .transition()
-    //            //.delay(2000)
-    //            .duration(1000)
-    //            .attr('fill', (d) => {
-    //                const idData = ahm.data.nest.find((di) => di.key === d.data.key);
-    //                const visitDatum = idData.values.find((di) => di.visit_order === next.visit_order);
+    function cycle() {
+        const transition = ahm.data.byVisit.reduce((prev,next,i) => {
+            return prev
+                .transition()
+                //.delay(2000)
+                .duration(1000)
+                .attr('fill', (d) => {
+                    const idData = ahm.data.nest.find((di) => di.key === d.data.key);
+                    const visitDatum = idData.values.find((di) => di.visit_order === next.visit_order);
 
-    //                if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
-    //                else return ahm.colorScale(d.data.value);
-    //            });
-    //    }, ahm.heatMap.iris);
+                    if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
+                    else return ahm.colorScale(d.data.value);
+                });
+        }, ahm.heatMap.iris);
 
-    //    transition.on('end', cycle);
-    //}
+        //transition.on('end', cycle);
+    }
 
     //this.data.byVisit.slice(1).forEach((visit) => {
     //    this.heatMap.textTransition = callTextTransition.call(
