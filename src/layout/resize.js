@@ -18,26 +18,28 @@ export default function resize() {
     this.heatMap.elements.visitText
         .attr('x', -this.settings.minDimension / 2)
         .attr('y', -this.settings.minDimension / 2);
-    this.heatMap.iris.attr('d', arcGenerator.call(this, this.settings.minDimension));
     this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 8);
+    this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.minDimension);
+    this.heatMap.iris.attr('d', this.heatMap.elements.arcGenerator);
 
     // Update small multiples.
-    this.heatMaps.forEach((heatMap) => {
-        heatMap.elements.svg
-            .attr('width', this.settings.smallMultipleSize)
-            .attr('height', this.settings.smallMultipleSize);
-        heatMap.elements.g.attr(
-            'transform',
-            'translate(' +
-                this.settings.smallMultipleSize / 2 +
-                ',' +
-                this.settings.smallMultipleSize / 2 +
-                ')'
-        );
-        heatMap.elements.visitText
-            .attr('x', -this.settings.minDimension / 2)
-            .attr('y', -this.settings.minDimension / 2);
-        heatMap.iris.attr('d', arcGenerator.call(this, this.settings.smallMultipleSize));
-        heatMap.elements.pupil.attr('r', this.settings.smallMultipleSize / 8);
-    });
+    //this.heatMaps.forEach((heatMap) => {
+    //    heatMap.elements.svg
+    //        .attr('width', this.settings.smallMultipleSize)
+    //        .attr('height', this.settings.smallMultipleSize);
+    //    heatMap.elements.g.attr(
+    //        'transform',
+    //        'translate(' +
+    //            this.settings.smallMultipleSize / 2 +
+    //            ',' +
+    //            this.settings.smallMultipleSize / 2 +
+    //            ')'
+    //    );
+    //    heatMap.elements.visitText
+    //        .attr('x', -this.settings.minDimension / 2)
+    //        .attr('y', -this.settings.minDimension / 2);
+    //    heatMap.elements.pupil.attr('r', this.settings.smallMultipleSize / 8);
+    //    this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.smallMultipleSize);
+    //    heatMap.iris.attr('d', heatMap.elements.arcGenerator);
+    //});
 }

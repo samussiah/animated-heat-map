@@ -25,13 +25,24 @@ export default function heatMap(title = 'All Participants') {
         .attr('transform', 'translate(' + dimension / 2 + ',' + dimension / 2 + ')'); // translate to center of SVG
 
     // draw visit text
+    //const visitText = g
+    //    .append('text')
+    //    .classed('ahm-visit-text', true)
+    //    .attr('x', -dimension / 2)
+    //    .attr('y', 0)
+    //    .attr('dominant-baseline', 'hanging')
+    //    .text(title);
     const visitText = g
-        .append('text')
+        .append('g')
         .classed('ahm-visit-text', true)
-        .attr('x', -dimension / 2)
-        .attr('y', -dimension / 2)
-        .attr('dominant-baseline', 'hanging')
-        .text(title);
+        .attr('transform', 'translate(' + -dimension / 2 + ',' + 0 + ')'); // translate to center of SVG
+    visitText
+        .append('rect')
+        .attr('x', 0)
+        .attr('width', dimension / 4)
+        .attr('y', -12)
+        .attr('height', 22)
+        .attr('fill', '#aaa');
 
     // draw pupil
     const pupil = g
@@ -39,7 +50,7 @@ export default function heatMap(title = 'All Participants') {
         .classed('ahm-pupil', true)
         .attr('cx', 0)
         .attr('cy', 0)
-        .attr('r', dimension / 8)
+        .attr('r', dimension / 16)
         .attr('fill', 'black')
         .attr('stroke', 'black')
         .attr('stroke-width', '5px')
@@ -51,6 +62,6 @@ export default function heatMap(title = 'All Participants') {
         g,
         visitText,
         pupil,
-        arcGenerator: arcGenerator.call(this, dimension),
+        arcGenerator: arcGenerator.call(this, dimension / 2),
     };
 }

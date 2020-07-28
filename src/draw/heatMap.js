@@ -12,16 +12,15 @@ export default function heatMap(data, i) {
     // draw arcs
     const iris = elements.g
         .selectAll('path')
-        .data(arcAngles) // pass arc
+        .data(arcAngles, (d) => d.data.key) // pass arc
         .join('path')
         .classed('ahm-iris', true)
         .attr('d', elements.arcGenerator) // call arc generator
-        .attr('fill', (d) => this.colorScale(d.data.value)); // color arcs by result
-    //.attr('stroke', 'white')
-    //.attr('stroke-width', '.5px');
+        .attr('fill', (d) => this.colorScale(d.data.value)) // color arcs by result
+        .attr('stroke', (d) => this.colorScale(d.data.value)); // color arcs by result
 
-    const textTransition = callTextTransition.call(this, elements.visitText, data.visit);
-    const transition = transitionToNextVisit.call(this, iris, data.visit_order);
+    //const textTransition = callTextTransition.call(this, elements.visitText, data.visit);
+    //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
 
     elements.pupil.raise();
 
@@ -29,7 +28,7 @@ export default function heatMap(data, i) {
         data,
         arcAngles,
         iris,
-        textTransition,
-        transition,
+        //textTransition,
+        //transition,
     };
 }
