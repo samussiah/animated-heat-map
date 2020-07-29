@@ -7,7 +7,7 @@ export default function heatMap(data, i) {
     const arcAngles = d3
         .pie()
         .sort(null)
-        .value((d, i) => 1)(data.values);
+        .value((d, i) => 1)(data.values.sort((a, b) => a.value - b.value));
 
     // draw arcs
     const iris = elements.g

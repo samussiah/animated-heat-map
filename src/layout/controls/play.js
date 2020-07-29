@@ -27,12 +27,12 @@ export default function play() {
     inputs.on('change', (d) => {
         this.settings.play = d.label;
         inputs.property('checked', (di) => di.label === this.settings.play);
-        const playingFunction = (a,b) => {
+        const playingFunction = (a, b) => {
             const aData = a.data ? a.data : a;
             const bData = b.data ? b.data : b;
             return this.settings.play === 'participant'
-                ? d3.ascending(aData.key, bData.key)//(a.data.key < b.data.key ? -1 : 1)
-                : d3.ascending(aData.value, bData.value);//(a.data.value - b.data.value)
+                ? d3.ascending(aData.key, bData.key) //(a.data.key < b.data.key ? -1 : 1)
+                : d3.ascending(aData.value, bData.value); //(a.data.value - b.data.value)
         };
 
         this.heatMap.arcAngles = d3
@@ -42,10 +42,10 @@ export default function play() {
 
         this.heatMap.iris
             .play(playingFunction)
-            .data(this.heatMap.arcAngles, d => d.data.key)
+            .data(this.heatMap.arcAngles, (d) => d.data.key)
             .transition()
             .duration(750)
-            .delay((d,i) => i*20)
+            .delay((d, i) => i * 20)
             .attr('d', this.heatMap.elements.arcGenerator);
     });
 

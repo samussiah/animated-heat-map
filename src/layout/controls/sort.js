@@ -27,12 +27,12 @@ export default function sort() {
     inputs.on('change', (d) => {
         this.settings.sort = d.label;
         inputs.property('checked', (di) => di.label === this.settings.sort);
-        const sortingFunction = (a,b) => {
+        const sortingFunction = (a, b) => {
             const aData = a.data ? a.data : a;
             const bData = b.data ? b.data : b;
             return this.settings.sort === 'participant'
-                ? d3.ascending(aData.key, bData.key)//(a.data.key < b.data.key ? -1 : 1)
-                : d3.ascending(aData.value, bData.value);//(a.data.value - b.data.value)
+                ? d3.ascending(aData.key, bData.key) //(a.data.key < b.data.key ? -1 : 1)
+                : d3.ascending(aData.value, bData.value); //(a.data.value - b.data.value)
         };
 
         this.heatMap.arcAngles = d3
@@ -42,11 +42,11 @@ export default function sort() {
 
         this.heatMap.iris
             .sort(sortingFunction)
-            .data(this.heatMap.arcAngles, d => d.data.key)
+            .data(this.heatMap.arcAngles, (d) => d.data.key)
             .transition()
             .duration(750)
             .ease(d3.easeElastic)
-            .delay((d,i) => i*20)
+            .delay((d, i) => i * 20)
             .attr('d', this.heatMap.elements.arcGenerator);
     });
 
