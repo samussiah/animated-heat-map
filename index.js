@@ -18,6 +18,8 @@
                 result: 'LBSTRESN',
             },
             view: 'heatMap',
+            sort: 'participant',
+            duration: 1000,
             measure: null,
             subset: null,
             // array of objects
@@ -119,28 +121,102 @@
                 },
             ])
             .join('label')
-            .text(function (d) {
-                return 'View '.concat(d.label);
-            })
             .append('input')
             .attr('type', 'radio')
             .property('checked', function (d) {
                 return d.prop === _this.settings.view;
-            });
+            }); // Add text _after_ radio button.
+
+        inputs.each(function (d) {
+            var text = document.createTextNode('View '.concat(d.label));
+            this.parentNode.appendChild(text);
+        });
         inputs.on('change', function (d) {
             _this.settings.view = d.prop;
-            inputs.property('checked', function (d) {
-                return d.prop === _this.settings.view;
+            inputs.property('checked', function (di) {
+                return di.prop === _this.settings.view;
             });
 
             _this.elements.heatMap.classed('ahm-hidden', _this.settings.view !== 'heatMap');
 
             _this.elements.heatMaps.classed('ahm-hidden', _this.settings.view !== 'heatMaps');
         });
+        return inputs;
+    }
+
+    function sort() {
+        var _this = this;
+
+        var container = this.elements.controls
+            .append('div')
+            .classed('ahm-control ahm-control--sort', true);
+        var inputs = container
+            .selectAll('label')
+            .data([
+                {
+                    label: 'participant',
+                },
+                {
+                    label: 'result',
+                },
+            ])
+            .join('label')
+            .append('input')
+            .attr('type', 'radio')
+            .property('checked', function (d) {
+                return d.label === _this.settings.sort;
+            }); // Add text _after_ radio button.
+
+        inputs.each(function (d) {
+            var text = document.createTextNode('Sort by '.concat(d.label));
+            this.parentNode.appendChild(text);
+        });
+        inputs.on('change', function (d) {
+            _this.settings.sort = d.label;
+            inputs.property('checked', function (di) {
+                return di.label === _this.settings.sort;
+            });
+
+            var sortingFunction = function sortingFunction(a, b) {
+                var aData = a.data ? a.data : a;
+                var bData = b.data ? b.data : b;
+                return _this.settings.sort === 'participant'
+                    ? d3.ascending(aData.key, bData.key) //(a.data.key < b.data.key ? -1 : 1)
+                    : d3.ascending(aData.value, bData.value); //(a.data.value - b.data.value)
+            };
+
+            _this.heatMap.arcAngles = d3
+                .pie()
+                .sort(null)
+                .value(function (d, i) {
+                    return 1;
+                })(_this.heatMap.data.values.sort(sortingFunction));
+
+            _this.heatMap.iris
+                .sort(sortingFunction)
+                .data(_this.heatMap.arcAngles, function (d) {
+                    return d.data.key;
+                })
+                .transition()
+                .duration(750)
+                .ease(d3.easeElastic)
+                .delay(function (d, i) {
+                    return i * 20;
+                })
+                .attr('d', _this.heatMap.elements.arcGenerator);
+        });
+        return inputs;
     }
 
     function controls() {
-        heatMapToggle.call(this);
+        var controls = {
+            elements: {
+                main: this.elements.controls,
+            },
+        };
+        controls.heatMapToggle = heatMapToggle.call(this);
+        controls.sort = sort.call(this);
+        return controls;
     }
 
     function arcGenerator(dimension) {
@@ -176,21 +252,33 @@
             .classed('ahm-g', true)
             .attr('transform', 'translate(' + dimension / 2 + ',' + dimension / 2 + ')'); // translate to center of SVG
         // draw visit text
+        //const visitText = g
+        //    .append('text')
+        //    .classed('ahm-visit-text', true)
+        //    .attr('x', -dimension / 2)
+        //    .attr('y', 0)
+        //    .attr('dominant-baseline', 'hanging')
+        //    .text(title);
 
         var visitText = g
-            .append('text')
+            .append('g')
             .classed('ahm-visit-text', true)
-            .attr('x', -dimension / 2)
-            .attr('y', -dimension / 2)
-            .attr('dominant-baseline', 'hanging')
-            .text(title); // draw pupil
+            .attr('transform', 'translate(' + -dimension / 2 + ',' + 0 + ')'); // translate to center of SVG
+
+        visitText
+            .append('rect')
+            .attr('x', 0)
+            .attr('width', dimension / 4)
+            .attr('y', -12)
+            .attr('height', 22)
+            .attr('fill', '#aaa'); // draw pupil
 
         var pupil = g
             .append('circle')
             .classed('ahm-pupil', true)
             .attr('cx', 0)
             .attr('cy', 0)
-            .attr('r', dimension / 8)
+            .attr('r', dimension / 16)
             .attr('fill', 'black')
             .attr('stroke', 'black')
             .attr('stroke-width', '5px')
@@ -201,13 +289,11 @@
             g: g,
             visitText: visitText,
             pupil: pupil,
-            arcGenerator: arcGenerator.call(this, dimension),
+            arcGenerator: arcGenerator.call(this, dimension / 2),
         };
     }
 
     function resize() {
-        var _this = this;
-
         // Update dimensions.
         this.settings.width = this.elements.parent.node().clientWidth;
         this.settings.height = (this.settings.width / 16) * 9;
@@ -228,27 +314,28 @@
         this.heatMap.elements.visitText
             .attr('x', -this.settings.minDimension / 2)
             .attr('y', -this.settings.minDimension / 2);
-        this.heatMap.iris.attr('d', arcGenerator.call(this, this.settings.minDimension));
-        this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 8); // Update small multiples.
-
-        this.heatMaps.forEach(function (heatMap) {
-            heatMap.elements.svg
-                .attr('width', _this.settings.smallMultipleSize)
-                .attr('height', _this.settings.smallMultipleSize);
-            heatMap.elements.g.attr(
-                'transform',
-                'translate(' +
-                    _this.settings.smallMultipleSize / 2 +
-                    ',' +
-                    _this.settings.smallMultipleSize / 2 +
-                    ')'
-            );
-            heatMap.elements.visitText
-                .attr('x', -_this.settings.minDimension / 2)
-                .attr('y', -_this.settings.minDimension / 2);
-            heatMap.iris.attr('d', arcGenerator.call(_this, _this.settings.smallMultipleSize));
-            heatMap.elements.pupil.attr('r', _this.settings.smallMultipleSize / 8);
-        });
+        this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 8);
+        this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.minDimension);
+        this.heatMap.iris.attr('d', this.heatMap.elements.arcGenerator); // Update small multiples.
+        //this.heatMaps.forEach((heatMap) => {
+        //    heatMap.elements.svg
+        //        .attr('width', this.settings.smallMultipleSize)
+        //        .attr('height', this.settings.smallMultipleSize);
+        //    heatMap.elements.g.attr(
+        //        'transform',
+        //        'translate(' +
+        //            this.settings.smallMultipleSize / 2 +
+        //            ',' +
+        //            this.settings.smallMultipleSize / 2 +
+        //            ')'
+        //    );
+        //    heatMap.elements.visitText
+        //        .attr('x', -this.settings.minDimension / 2)
+        //        .attr('y', -this.settings.minDimension / 2);
+        //    heatMap.elements.pupil.attr('r', this.settings.smallMultipleSize / 8);
+        //    this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.smallMultipleSize);
+        //    heatMap.iris.attr('d', heatMap.elements.arcGenerator);
+        //});
     }
 
     function layout() {
@@ -288,6 +375,41 @@
             },
         };
         window.addEventListener('resize', resize.bind(this));
+    }
+
+    function drawVisits() {
+        var ahm = this;
+        var visits = this.heatMap.elements.visitText
+            .selectAll('text')
+            .data(this.data.byVisit)
+            .join('text')
+            .attr('x', 0)
+            .attr('y', function (d, i) {
+                return i * 25;
+            })
+            .attr('fill-opacity', function (d, i) {
+                return 1 - i / 5;
+            })
+            .attr('alignment-baseline', 'middle')
+            .text(function (d) {
+                return d.visit;
+            });
+        cycle(); // TODO: use chained transitions with transition.on('start', function repeat() {// transitions, recursive shit; })
+
+        function cycle() {
+            var transition = ahm.data.byVisit.reduce(function (prev, next, i) {
+                return prev
+                    .transition()
+                    .duration(1000)
+                    .attr('y', function (d, j) {
+                        return j * 25 - i * 25;
+                    }) // the 5 visits before and after the current visit index (i) should be visible
+                    .attr('fill-opacity', function (d, j) {
+                        return 1 - Math.abs(i - j) / 5;
+                    });
+            }, visits);
+            transition.on('end', cycle);
+        }
     }
 
     function ramp(color) {
@@ -477,34 +599,6 @@
         return svg.node();
     }
 
-    function textTransition(visitText, text) {
-        var transition = visitText
-            .transition() //.delay(2000)
-            .duration(2000)
-            .text(text);
-        return transition;
-    }
-
-    function transitionToNextVisit(iris, visit_order) {
-        var _this = this;
-
-        var transition = iris
-            .transition() //.delay(2000)
-            .duration(2000)
-            .attr('fill', function (d) {
-                var idData = _this.data.nest.find(function (di) {
-                    return di.key === d.data.key;
-                });
-
-                var visitDatum = idData.values.find(function (di) {
-                    return di.visit_order === visit_order;
-                });
-                if (visitDatum !== undefined) return _this.colorScale(visitDatum.result);
-                else return _this.colorScale(d.data.value);
-            });
-        return transition;
-    }
-
     function heatMap$1(data, i) {
         var _this = this;
 
@@ -514,69 +608,39 @@
             .sort(null)
             .value(function (d, i) {
                 return 1;
-            })(data.values); // draw arcs
+            })(
+            data.values.sort(function (a, b) {
+                return a.value - b.value;
+            })
+        ); // draw arcs
 
         var iris = elements.g
             .selectAll('path')
-            .data(arcAngles) // pass arc
+            .data(arcAngles, function (d) {
+                return d.data.key;
+            }) // pass arc
             .join('path')
             .classed('ahm-iris', true)
             .attr('d', elements.arcGenerator) // call arc generator
             .attr('fill', function (d) {
                 return _this.colorScale(d.data.value);
+            }) // color arcs by result
+            .attr('stroke', function (d) {
+                return _this.colorScale(d.data.value);
             }); // color arcs by result
-        //.attr('stroke', 'white')
-        //.attr('stroke-width', '.5px');
+        //const textTransition = callTextTransition.call(this, elements.visitText, data.visit);
+        //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
 
-        var textTransition$1 = textTransition.call(this, elements.visitText, data.visit);
-        var transition = transitionToNextVisit.call(this, iris, data.visit_order);
         elements.pupil.raise();
         return {
             data: data,
             arcAngles: arcAngles,
-            iris: iris,
-            textTransition: textTransition$1,
-            transition: transition,
+            iris: iris, //textTransition,
+            //transition,
         };
     }
 
-    function smallMultiples() {
-        var _this = this;
-
-        var heatMaps = this.data.byVisit.map(function (visit, i) {
-            visit.elements = heatMap.call(_this, visit.visit); // One arc per ID; constant arc length
-
-            _this.data.nest.forEach(function (d) {
-                // Find ID nest within visit nest.
-                var datum = visit.values.find(function (di) {
-                    return di.key === d.key;
-                });
-                if (datum === undefined)
-                    visit.values.push({
-                        key: d.key,
-                        value: null,
-                    });
-            });
-
-            visit.values.sort(function (a, b) {
-                return (
-                    _this.data.nest.findIndex(function (d) {
-                        return d.key === a.key;
-                    }) -
-                    _this.data.nest.findIndex(function (d) {
-                        return d.key === b.key;
-                    })
-                );
-            });
-            var heatMap$2 = heatMap$1.call(_this, visit, i);
-            return Object.assign(visit, heatMap$2);
-        });
-        return heatMaps;
-    }
-
     function draw() {
-        var _this = this;
-
         this.colorScale = d3.scaleLinear().domain(this.domain).range(['#f7fbff', '#08306b']); // Draw legend.
 
         this.elements.legend.node().appendChild(
@@ -584,23 +648,55 @@
                 color: this.colorScale,
                 title: this.settings.measure,
             })
-        ); // Draw animated chart.
+        );
+        drawVisits.call(this); // Draw animated chart.
 
         Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
-        this.data.byVisit.slice(1).forEach(function (visit) {
-            _this.heatMap.textTransition = textTransition.call(
-                _this,
-                _this.heatMap.textTransition,
-                visit.visit
-            );
-            _this.heatMap.transition = transitionToNextVisit.call(
-                _this,
-                _this.heatMap.transition,
-                visit.visit_order
-            );
-        }); // Draw small multiples.
+        var ahm = this;
+        console.log(ahm.data.byVisit);
+        console.log(ahm.heatMap.iris); //cycle();
 
-        this.heatMaps = smallMultiples.call(this);
+        ahm.heatMap.iris
+            .transition()
+            .ease(d3.easeLinear)
+            .on('start', function repeat() {
+                var transition = d3.active(this);
+                ahm.data.byVisit.reduce(function (prev, visit, i) {
+                    var next = prev
+                        .transition()
+                        .duration(1000)
+                        .attr('fill', function (d) {
+                            // Find the full data array of the current participant.
+                            var idData = ahm.data.nest.find(function (di) {
+                                return di.key === d.data.key;
+                            }); // Find the single datum matching the current visit.
+
+                            var visitDatum = idData.values.find(function (di) {
+                                return di.visit_order === visit.visit_order;
+                            }); // If the participant has a result at the current visit, update the color
+                            // per the result.
+
+                            if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
+                            // Otherwise maintain the exisiting color.
+                            else return ahm.colorScale(d.data.value);
+                        });
+                    if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
+                    return next;
+                }, transition);
+            });
+        //    this.heatMap.textTransition = callTextTransition.call(
+        //        this,
+        //        this.heatMap.textTransition,
+        //        visit.visit
+        //    );
+        //    this.heatMap.transition = transitionToNextVisit.call(
+        //        this,
+        //        this.heatMap.transition,
+        //        visit.visit_order
+        //    );
+        //});
+        //// Draw small multiples.
+        //this.heatMaps = smallMultiples.call(this);
     }
 
     function animatedHeatMap(data$1) {

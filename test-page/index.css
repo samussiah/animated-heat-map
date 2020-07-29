@@ -32,6 +32,26 @@ body > * {
 .ahm-hidden {
     display: none !important;
 }
+.ahm-controls {
+    display: inline-block;
+    width: 100%;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.ahm-control {
+    display: inline-block;
+    margin-right: 1rem;
+}
+.ahm-control label {
+    display: flex;
+    align-items: center;
+    float: left;
+    clear: left;
+}
+.ahm-control input {
+    margin-right: .5rem;
+}
 .ahm-legend {
     position: absolute;
     top: 0;

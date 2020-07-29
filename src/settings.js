@@ -9,6 +9,8 @@ export default function settings() {
             result: 'LBSTRESN',
         },
         view: 'heatMap',
+        sort: 'participant',
+        duration: 1000,
         measure: null,
         subset: null, // array of objects
         width: null, // integer (pixels) - defined in ./layout
