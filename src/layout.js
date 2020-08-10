@@ -14,7 +14,7 @@ export default function layout() {
     this.elements.main = this.elements.parent.append('div').classed('animated-heat-map', true);
 
     //controls
-    this.elements.controls = this.elements.main.append('div').classed('ahm-controls', true);
+    this.elements.controls = this.elements.main.append('div').classed('ahm-controls', true).style('height', '40px');
 
     this.controls = controls.call(this);
 

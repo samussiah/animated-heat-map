@@ -16,18 +16,13 @@ export default function draw() {
         })
     );
 
-    drawVisits.call(this);
+    this.heatMap.visitText = drawVisits.call(this);
 
     // Draw animated chart.
     Object.assign(this.heatMap, drawHeatMap.call(this, this.data.byVisit[0]));
 
     const ahm = this;
-
-    console.log(ahm.data.byVisit);
-    console.log(ahm.heatMap.iris);
-    //cycle();
-
-    ahm.heatMap.iris
+    this.heatMap.iris
         .transition()
         .ease(d3.easeLinear)
         .on('start', function repeat() {
@@ -36,7 +31,7 @@ export default function draw() {
             ahm.data.byVisit.reduce((prev, visit, i) => {
                 const next = prev
                     .transition()
-                    .duration(1000)
+                    .duration(ahm.settings.duration)
                     .attr('fill', (d) => {
                         // Find the full data array of the current participant.
                         const idData = ahm.data.nest.find((di) => di.key === d.data.key);
@@ -63,7 +58,7 @@ export default function draw() {
                 prev
                     .transition()
                     //.delay(2000)
-                    .duration(1000)
+                    .duration(ahm.settings.duration)
                     .attr('fill', (d) => {
                         const idData = ahm.data.nest.find((di) => di.key === d.data.key);
                         const visitDatum = idData.values.find(

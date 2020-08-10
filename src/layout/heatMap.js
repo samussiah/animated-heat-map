@@ -22,7 +22,7 @@ export default function heatMap(title = 'All Participants') {
     const g = svg
         .append('g')
         .classed('ahm-g', true)
-        .attr('transform', 'translate(' + dimension / 2 + ',' + dimension / 2 + ')'); // translate to center of SVG
+        .attr('transform', 'translate(' + dimension / 2 + ',' + dimension / 4 + ')'); // translate to center of SVG
 
     // draw visit text
     //const visitText = g

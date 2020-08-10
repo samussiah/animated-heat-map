@@ -19,7 +19,7 @@ export default function drawVisits() {
             return (
                 prev
                     .transition()
-                    .duration(1000)
+                    .duration(ahm.settings.duration)
                     .attr('y', (d, j) => j * 25 - i * 25)
                     // the 5 visits before and after the current visit index (i) should be visible
                     .attr('fill-opacity', (d, j) => 1 - Math.abs(i - j) / 5)
@@ -27,4 +27,6 @@ export default function drawVisits() {
         }, visits);
         transition.on('end', cycle);
     }
+
+    return visits;
 }

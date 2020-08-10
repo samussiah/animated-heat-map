@@ -11,6 +11,7 @@ export default function settings() {
         view: 'heatMap',
         sort: 'participant',
         duration: 1000,
+        playPause: 'play',
         measure: null,
         subset: null, // array of objects
         width: null, // integer (pixels) - defined in ./layout

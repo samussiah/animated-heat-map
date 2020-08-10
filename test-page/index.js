@@ -3,12 +3,12 @@ fetch('./lb.csv')
     .then(text => d3.csvParse(text, d3.autoType))
     .then(data => {
         const ahm = animatedHeatMap(
-            data,
+            data.filter(d => !(d.VISITNUM%1)),
             '#container',
             {
-                measure: 'Albumin (g/L)',
+                measure: 'Platelet count',
                 subset: [
-                    { key: 'LBTEST', value: ['Albumin'] },
+                    { key: 'LBTEST', value: ['Platelet count'] },
                 ],
             }
         );
