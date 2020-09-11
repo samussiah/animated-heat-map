@@ -11,6 +11,7 @@ export default function heatMap(data, i) {
 
     // draw arcs
     const iris = elements.g
+        .append('g')
         .selectAll('path')
         .data(arcAngles, (d) => d.data.key) // pass arc
         .join('path')
@@ -23,6 +24,8 @@ export default function heatMap(data, i) {
     //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
 
     elements.pupil.raise();
+
+    elements.pupilText.raise();
 
     return {
         data,

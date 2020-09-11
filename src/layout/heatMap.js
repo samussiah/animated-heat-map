@@ -55,6 +55,15 @@ export default function heatMap(title = 'All Participants') {
         .attr('stroke', 'black')
         .attr('stroke-width', '5px')
         .attr('stroke-opacity', 0.25);
+    const pupilText = g
+        .append('text')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('fill', 'white')
+        .attr('stroke', 'white')
+        .attr('text-anchor', 'middle')
+        .text('95% with fluid');
+    console.log(pupilText);
 
     return {
         header,
@@ -62,6 +71,7 @@ export default function heatMap(title = 'All Participants') {
         g,
         visitText,
         pupil,
+        pupilText,
         arcGenerator: arcGenerator.call(this, dimension / 2),
     };
 }

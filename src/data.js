@@ -48,4 +48,5 @@ export default function data() {
 
     // Calculate domain.
     this.domain = d3.extent(this.data.clean, (d) => d.result);
+    this.cutoff = d3.quantile(this.data.clean.map(d => d.result).sort((a,b) => a-b), .5);
 }

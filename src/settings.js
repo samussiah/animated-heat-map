@@ -10,7 +10,7 @@ export default function settings() {
         },
         view: 'heatMap',
         sort: 'participant',
-        duration: 1000,
+        duration: 2500,
         playPause: 'play',
         measure: null,
         subset: null, // array of objects

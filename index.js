@@ -16,7 +16,7 @@
         },
         view: 'heatMap',
         sort: 'participant',
-        duration: 1000,
+        duration: 2500,
         playPause: 'play',
         measure: null,
         subset: null,
@@ -85,6 +85,11 @@
       this.domain = d3.extent(this.data.clean, function (d) {
         return d.result;
       });
+      this.cutoff = d3.quantile(this.data.clean.map(function (d) {
+        return d.result;
+      }).sort(function (a, b) {
+        return a - b;
+      }), .5);
     }
 
     function controls() {
@@ -128,12 +133,15 @@
       visitText.append('rect').attr('x', 0).attr('width', dimension / 4).attr('y', -12).attr('height', 22).attr('fill', '#aaa'); // draw pupil
 
       var pupil = g.append('circle').classed('ahm-pupil', true).attr('cx', 0).attr('cy', 0).attr('r', dimension / 16).attr('fill', 'black').attr('stroke', 'black').attr('stroke-width', '5px').attr('stroke-opacity', 0.25);
+      var pupilText = g.append('text').attr('x', 0).attr('y', 0).attr('fill', 'white').attr('stroke', 'white').attr('text-anchor', 'middle').text('95% with fluid');
+      console.log(pupilText);
       return {
         header: header,
         svg: svg,
         g: g,
         visitText: visitText,
         pupil: pupil,
+        pupilText: pupilText,
         arcGenerator: arcGenerator.call(this, dimension / 2)
       };
     }
@@ -351,7 +359,7 @@
         return a.value - b.value;
       })); // draw arcs
 
-      var iris = elements.g.selectAll('path').data(arcAngles, function (d) {
+      var iris = elements.g.append('g').selectAll('path').data(arcAngles, function (d) {
         return d.data.key;
       }) // pass arc
       .join('path').classed('ahm-iris', true).attr('d', elements.arcGenerator) // call arc generator
@@ -365,6 +373,7 @@
       //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
 
       elements.pupil.raise();
+      elements.pupilText.raise();
       return {
         data: data,
         arcAngles: arcAngles,
@@ -385,6 +394,17 @@
 
       Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
       var ahm = this;
+      console.log(ahm.heatMap);
+      this.heatMap.elements.pupilText.transition().on('start', function repeat() {
+        var transition = d3.active(this);
+        ahm.data.byVisit.reduce(function (prev, visit, i) {
+          var next = prev.transition().duration(ahm.settings.duration).text("".concat(d3.format('.0%')(visit.values.filter(function (d) {
+            return d.value <= ahm.cutoff;
+          }).length / ahm.data.sets.id.length), " reduction"));
+          if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
+          return next;
+        }, transition);
+      });
       this.heatMap.iris.transition().ease(d3.easeLinear).on('start', function repeat() {
         var transition = d3.active(this);
         ahm.data.byVisit.reduce(function (prev, visit, i) {
@@ -400,7 +420,20 @@
             // per the result.
 
             if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result); // Otherwise maintain the exisiting color.
-            else return ahm.colorScale(d.data.value);
+            else return this.getAttribute('fill');
+          }).attr('stroke', function (d) {
+            // Find the full data array of the current participant.
+            var idData = ahm.data.nest.find(function (di) {
+              return di.key === d.data.key;
+            }); // Find the single datum matching the current visit.
+
+            var visitDatum = idData.values.find(function (di) {
+              return di.visit_order === visit.visit_order;
+            }); // If the participant has a result at the current visit, update the color
+            // per the result.
+
+            if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result); // Otherwise maintain the exisiting color.
+            else return this.getAttribute('stroke');
           });
           if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
           return next;

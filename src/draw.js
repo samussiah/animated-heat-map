@@ -22,6 +22,22 @@ export default function draw() {
     Object.assign(this.heatMap, drawHeatMap.call(this, this.data.byVisit[0]));
 
     const ahm = this;
+    console.log(ahm.heatMap);
+
+    this.heatMap.elements.pupilText
+        .transition()
+        .on('start', function repeat() {
+            const transition = d3.active(this);
+
+            ahm.data.byVisit.reduce((prev, visit, i) => {
+                const next = prev
+                    .transition()
+                    .duration(ahm.settings.duration)
+                    .text(`${d3.format('.0%')(visit.values.filter(d => d.value <= ahm.cutoff).length/ahm.data.sets.id.length)} reduction`);
+                if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
+                return next;
+            }, transition);
+        });
     this.heatMap.iris
         .transition()
         .ease(d3.easeLinear)
@@ -32,7 +48,7 @@ export default function draw() {
                 const next = prev
                     .transition()
                     .duration(ahm.settings.duration)
-                    .attr('fill', (d) => {
+                    .attr('fill', function(d) {
                         // Find the full data array of the current participant.
                         const idData = ahm.data.nest.find((di) => di.key === d.data.key);
 
@@ -45,7 +61,22 @@ export default function draw() {
                         // per the result.
                         if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
                         // Otherwise maintain the exisiting color.
-                        else return ahm.colorScale(d.data.value);
+                        else return this.getAttribute('fill');
+                    })
+                    .attr('stroke', function(d) {
+                        // Find the full data array of the current participant.
+                        const idData = ahm.data.nest.find((di) => di.key === d.data.key);
+
+                        // Find the single datum matching the current visit.
+                        const visitDatum = idData.values.find(
+                            (di) => di.visit_order === visit.visit_order
+                        );
+
+                        // If the participant has a result at the current visit, update the color
+                        // per the result.
+                        if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
+                        // Otherwise maintain the exisiting color.
+                        else return this.getAttribute('stroke');
                     });
                 if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
                 return next;
