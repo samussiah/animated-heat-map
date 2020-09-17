@@ -54,6 +54,6 @@ body > * {
 }
 .ahm-legend {
     position: absolute;
-    top: 0;
+    top: 3rem;
     left: 0;
 }
