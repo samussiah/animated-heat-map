@@ -1,37 +1,32 @@
-import callTextTransition from './heatMap/textTransition';
-import transitionToNextVisit from './heatMap/transitionToNextVisit';
+//import callTextTransition from './heatMap/textTransition';
+//import transitionToNextVisit from './heatMap/transitionToNextVisit';
 
 export default function heatMap(data, i) {
-    const elements = i === undefined ? this.heatMap.elements : data.elements;
-
-    const arcAngles = d3
+    const pie = d3
         .pie()
         .sort(null)
-        .value((d, i) => 1)(data.values.sort((a, b) => a.value - b.value));
+        .value((d, i) => 1);
 
-    // draw arcs
-    const iris = elements.g
-        .append('g')
+    const pieData = pie(
+        data.values.sort((a, b) => a.value - b.value)
+    );
+
+    const iris = this.containers.iris
         .selectAll('path')
-        .data(arcAngles, (d) => d.data.key) // pass arc
+        .data(pieData, (d) => d.data.key) // pass arc
         .join('path')
         .classed('ahm-iris', true)
-        .attr('d', elements.arcGenerator) // call arc generator
+        .attr('d', this.arcGenerator) // call arc generator
         .attr('fill', (d) => this.colorScale(d.data.value)) // color arcs by result
         .attr('stroke', (d) => this.colorScale(d.data.value)); // color arcs by result
 
-    //const textTransition = callTextTransition.call(this, elements.visitText, data.visit);
-    //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
-
-    elements.pupil.raise();
-
-    elements.pupilText.raise();
+    this.containers.pupil.raise();
+    this.containers.annotation.raise();
 
     return {
         data,
-        arcAngles,
+        pie,
+        pieData,
         iris,
-        //textTransition,
-        //transition,
     };
 }

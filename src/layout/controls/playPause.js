@@ -22,7 +22,7 @@ export default function playPause() {
         .style('cursor', 'pointer')
         .html(playPauseData.find((value) => value.action !== this.settings.playPause).html);
 
-    inputs.on('click', function(d) {
+    inputs.on('click', function (d) {
         if (this.settings.playPause === 'pause') {
             this.settings.playPause = 'play';
             this.heatMap.visitText.interrupt();

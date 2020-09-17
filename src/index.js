@@ -1,21 +1,20 @@
-import defaultSettings from './settings';
-import dataManipulation from './data';
+import defaults from './settings';
+import util from './util/index';
 import layout from './layout';
+import dataManipulation from './data';
 import draw from './draw';
 
-// TODO: animate by visit or timepoint
 export default function animatedHeatMap(data, element = 'body', settings = {}) {
-    const ahm = {
+    const main = {
         data,
-        elements: {
-            parent: d3.select(element),
-        },
-        settings: Object.assign(defaultSettings(), settings),
+        element,
+        settings: Object.assign(defaults(), settings),
+        util,
     };
 
-    layout.call(ahm);
-    dataManipulation.call(ahm);
-    draw.call(ahm);
+    main.containers = layout.call(main); // add elements to DOM
+    dataManipulation.call(main); // mutate and structure data
+    draw.call(main); // run the animation
 
-    return ahm;
+    return main;
 }

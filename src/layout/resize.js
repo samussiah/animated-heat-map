@@ -15,11 +15,11 @@ export default function resize() {
         'transform',
         'translate(' + this.settings.minDimension / 2 + ',' + this.settings.minDimension / 4 + ')'
     );
-    this.heatMap.elements.visitText
-        .attr('transform', 'translate(' + -this.settings.minDimension / 2 + ',' + 0 + ')'); // translate to center of SVG
-    this.heatMap.elements.visitText
-        .select('rect')
-        .attr('width', this.settings.minDimension / 4)
+    this.heatMap.elements.visitText.attr(
+        'transform',
+        'translate(' + -this.settings.minDimension / 2 + ',' + 0 + ')'
+    ); // translate to center of SVG
+    this.heatMap.elements.visitText.select('rect').attr('width', this.settings.minDimension / 4);
     this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 16);
     this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.minDimension / 2);
     this.heatMap.iris.attr('d', this.heatMap.elements.arcGenerator);

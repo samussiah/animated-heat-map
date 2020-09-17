@@ -6,15 +6,12 @@
 
     function settings() {
       return {
-        variables: {
-          id: 'USUBJID',
-          arm: 'ARM',
-          visit: 'VISIT',
-          visit_order: 'VISITNUM',
-          measure: 'LBTEST',
-          result: 'LBSTRESN'
-        },
-        view: 'heatMap',
+        id_var: 'USUBJID',
+        //arm_var: 'ARM',
+        visit_var: 'VISIT',
+        visit_order_var: 'VISITNUM',
+        measure_var: 'LBTEST',
+        result_var: 'LBSTRESN',
         sort: 'participant',
         duration: 2500,
         playPause: 'play',
@@ -23,12 +20,131 @@
         // array of objects
         width: null,
         // integer (pixels) - defined in ./layout
-        height: null // integer (pixels) - defined in ./layout
-
+        height: null,
+        // integer (pixels) - defined in ./layout
+        cutoff: function cutoff(results) {
+          return d3.quantile(results.sort(function (a, b) {
+            return a - b;
+          }), 0.75);
+        }
       };
     }
 
-    function data() {
+    function addElement(name, parent) {
+      var tagName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'div';
+      var element = parent.append(tagName).classed("ahm-".concat(name), true).classed("ahm-".concat(tagName), true).classed("ahm-".concat(name, "__").concat(tagName), true);
+      return element;
+    }
+
+    var util = {
+      addElement: addElement
+    };
+
+    function getDimensions(containers) {
+      this.settings.width = containers.main.node().clientWidth;
+      this.settings.height = this.settings.width / 16 * 9;
+      this.settings.radius = this.settings.height / 2;
+      this.settings.innerRadius = this.settings.height / 8;
+      this.settings.outerRadius = this.settings.height / 2;
+      this.settings.outerWidth = this.settings.width - this.settings.height;
+    }
+
+    function layout() {
+      var containers = {
+        main: d3.select(this.element).append('div').classed('animated-heat-map', true)
+      };
+      getDimensions.call(this, containers);
+      containers.controls = this.util.addElement('controls', containers.main);
+      containers.legend = this.util.addElement('legend', containers.main);
+      containers.heatMap = this.util.addElement('heat-map', containers.main);
+      containers.svg = this.util.addElement('svg', containers.heatMap, 'svg').attr('width', this.settings.width).attr('height', this.settings.height);
+      containers.g = this.util.addElement('g', containers.svg, 'g').attr('transform', "translate(".concat(this.settings.width / 2, ",").concat(this.settings.radius, ")"));
+      containers.visits = this.util.addElement('visits', containers.g, 'g').attr('transform', "translate(-".concat(this.settings.width / 2, ",0)"));
+      containers.visitBackground = this.util.addElement('visit-background', containers.visits, 'rect').attr('x', 0).attr('width', this.settings.width / 2).attr('y', '-12').attr('height', 22).attr('fill', '#aaa');
+      containers.iris = this.util.addElement('iris', containers.g, 'g');
+      containers.pupil = this.util.addElement('pupil', containers.g, 'circle').attr('r', this.settings.innerRadius);
+      containers.annotation = this.util.addElement('annotation', containers.g, 'text').attr('fill', 'white').attr('stoke', 'white').attr('text-anchor', 'middle').attr('alignment-baseline', 'middle');
+      containers.annotation1 = this.util.addElement('annotation__1', containers.annotation, 'tspan').attr('x', 0).attr('y', -12);
+      containers.annotation2 = this.util.addElement('annotation__2', containers.annotation, 'tspan').attr('x', 0).attr('y', 12).text('Baseline'); //window.addEventListener('resize', resize.bind(this));
+
+      return containers;
+    }
+
+    function _unsupportedIterableToArray(o, minLen) {
+      if (!o) return;
+      if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+      var n = Object.prototype.toString.call(o).slice(8, -1);
+      if (n === "Object" && o.constructor) n = o.constructor.name;
+      if (n === "Map" || n === "Set") return Array.from(o);
+      if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+    }
+
+    function _arrayLikeToArray(arr, len) {
+      if (len == null || len > arr.length) len = arr.length;
+
+      for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+      return arr2;
+    }
+
+    function _createForOfIteratorHelper(o, allowArrayLike) {
+      var it;
+
+      if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+        if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+          if (it) o = it;
+          var i = 0;
+
+          var F = function () {};
+
+          return {
+            s: F,
+            n: function () {
+              if (i >= o.length) return {
+                done: true
+              };
+              return {
+                done: false,
+                value: o[i++]
+              };
+            },
+            e: function (e) {
+              throw e;
+            },
+            f: F
+          };
+        }
+
+        throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+      }
+
+      var normalCompletion = true,
+          didErr = false,
+          err;
+      return {
+        s: function () {
+          it = o[Symbol.iterator]();
+        },
+        n: function () {
+          var step = it.next();
+          normalCompletion = step.done;
+          return step;
+        },
+        e: function (e) {
+          didErr = true;
+          err = e;
+        },
+        f: function () {
+          try {
+            if (!normalCompletion && it.return != null) it.return();
+          } finally {
+            if (didErr) throw err;
+          }
+        }
+      };
+    }
+
+    function mutate() {
       var _this = this;
 
       this.data.filtered = this.data; // Apply user-specified subset(s).
@@ -40,23 +156,41 @@
         });
       }); // Keep and rename required variables.
 
-      this.data.clean = this.data.filtered.map(function (d) {
+      this.data.clean = this.data.filtered.map(function (d, i) {
         var datum = {};
 
-        for (var variable in _this.settings.variables) {
-          datum[variable] = d[_this.settings.variables[variable]];
+        var _iterator = _createForOfIteratorHelper(Object.keys(_this.settings).filter(function (key) {
+          return /_var$/.test(key);
+        })),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var setting = _step.value;
+            var variable = setting.replace(/_var$/, '');
+            datum[variable] = d[_this.settings[setting]];
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
         }
 
         return datum;
       }).filter(function (d) {
         return [NaN, null, undefined, false].includes(d.result) === false;
-      }); // Nest data by ID.
+      });
+    }
 
-      this.data.nest = d3.nest().key(function (d) {
+    function id() {
+      var group = d3.nest().key(function (d) {
         return d.id;
-      }) //.rollup((group) => group[0].result)
-      .entries(this.data.clean);
-      this.data.byVisit = d3.nest().key(function (d) {
+      }).entries(this.data.clean);
+      return group;
+    }
+
+    function visit() {
+      var group = d3.nest().key(function (d) {
         return d.visit + ':|:' + d.visit_order;
       }).key(function (d) {
         return d.id;
@@ -70,172 +204,63 @@
       }).sort(function (a, b) {
         return a.visit_order - b.visit_order;
       });
-      this.data.sets = {
-        id: this.data.nest.map(function (d) {
+      return group;
+    }
+
+    function group() {
+      var groups = {
+        id: id.call(this),
+        visit: visit.call(this)
+      };
+      return groups;
+    }
+
+    function set() {
+      var sets = {
+        id: this.data.groups.id.map(function (d) {
           return d.key;
         }),
-        visit: this.data.byVisit.map(function (d) {
+        visit: this.data.groups.visit.map(function (d) {
           return d.visit;
         }),
-        visit_order: this.data.byVisit.map(function (d) {
+        visit_order: this.data.groups.visit.map(function (d) {
           return d.visit_order;
         })
-      }; // Calculate domain.
+      };
+      return sets;
+    }
 
-      this.domain = d3.extent(this.data.clean, function (d) {
+    function domain() {
+      var domain = d3.extent(this.data.clean, function (d) {
         return d.result;
       });
-      this.cutoff = d3.quantile(this.data.clean.map(function (d) {
-        return d.result;
-      }).sort(function (a, b) {
-        return a - b;
-      }), .5);
+      return domain;
     }
 
-    function controls() {
-      var controls = {
-        elements: {
-          main: this.elements.controls
-        }
-      }; //controls.playPause = playPause.call(this);
-      //controls.heatMapToggle = heatMapToggle.call(this);
-      //controls.sort = sort.call(this);
+    function data() {
+      var _this = this;
 
-      return controls;
-    }
+      mutate.call(this);
+      this.data.groups = group.call(this);
+      this.data.sets = set.call(this); // TODO: move somewhere more appropriate
 
-    function arcGenerator(dimension) {
-      var arcGenerator = d3.arc().innerRadius(dimension / 8).outerRadius(dimension / 2 - 1);
-      return arcGenerator;
-    }
-
-    function heatMap() {
-      var title = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'All Participants';
-      var container = title === 'All Participants' ? this.elements.heatMap : this.elements.heatMaps.append('div').classed('ahm-heat-map', true);
-      var dimension = title === 'All Participants' ? this.settings.minDimension : this.settings.smallMultipleSize; // header
-
-      var header = container.append('h3').classed('ahm-header', true).text(title); // svg
-
-      var svg = container.append('svg').classed('ahm-svg', true).attr('width', dimension).attr('height', dimension); // g
-
-      var g = svg.append('g').classed('ahm-g', true).attr('transform', 'translate(' + dimension / 2 + ',' + dimension / 4 + ')'); // translate to center of SVG
-      // draw visit text
-      //const visitText = g
-      //    .append('text')
-      //    .classed('ahm-visit-text', true)
-      //    .attr('x', -dimension / 2)
-      //    .attr('y', 0)
-      //    .attr('dominant-baseline', 'hanging')
-      //    .text(title);
-
-      var visitText = g.append('g').classed('ahm-visit-text', true).attr('transform', 'translate(' + -dimension / 2 + ',' + 0 + ')'); // translate to center of SVG
-
-      visitText.append('rect').attr('x', 0).attr('width', dimension / 4).attr('y', -12).attr('height', 22).attr('fill', '#aaa'); // draw pupil
-
-      var pupil = g.append('circle').classed('ahm-pupil', true).attr('cx', 0).attr('cy', 0).attr('r', dimension / 16).attr('fill', 'black').attr('stroke', 'black').attr('stroke-width', '5px').attr('stroke-opacity', 0.25);
-      var pupilText = g.append('text').attr('x', 0).attr('y', 0).attr('fill', 'white').attr('stroke', 'white').attr('text-anchor', 'middle').text('95% with fluid');
-      console.log(pupilText);
-      return {
-        header: header,
-        svg: svg,
-        g: g,
-        visitText: visitText,
-        pupil: pupil,
-        pupilText: pupilText,
-        arcGenerator: arcGenerator.call(this, dimension / 2)
-      };
-    }
-
-    function resize() {
-      // Update dimensions.
-      this.settings.width = this.elements.parent.node().clientWidth;
-      this.settings.height = this.settings.width / 16 * 9;
-      this.settings.minDimension = Math.min(this.settings.width, this.settings.height);
-      this.settings.smallMultipleSize = this.settings.minDimension / 4; // Update main heat map.
-
-      this.heatMap.elements.svg.attr('width', this.settings.minDimension).attr('height', this.settings.minDimension);
-      this.heatMap.elements.g.attr('transform', 'translate(' + this.settings.minDimension / 2 + ',' + this.settings.minDimension / 4 + ')');
-      this.heatMap.elements.visitText.attr('transform', 'translate(' + -this.settings.minDimension / 2 + ',' + 0 + ')'); // translate to center of SVG
-
-      this.heatMap.elements.visitText.select('rect').attr('width', this.settings.minDimension / 4);
-      this.heatMap.elements.pupil.attr('r', this.settings.minDimension / 16);
-      this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.minDimension / 2);
-      this.heatMap.iris.attr('d', this.heatMap.elements.arcGenerator); // Update small multiples.
-      //this.heatMaps.forEach((heatMap) => {
-      //    heatMap.elements.svg
-      //        .attr('width', this.settings.smallMultipleSize)
-      //        .attr('height', this.settings.smallMultipleSize);
-      //    heatMap.elements.g.attr(
-      //        'transform',
-      //        'translate(' +
-      //            this.settings.smallMultipleSize / 2 +
-      //            ',' +
-      //            this.settings.smallMultipleSize / 2 +
-      //            ')'
-      //    );
-      //    heatMap.elements.visitText
-      //        .attr('x', -this.settings.minDimension / 2)
-      //        .attr('y', -this.settings.minDimension / 2);
-      //    heatMap.elements.pupil.attr('r', this.settings.smallMultipleSize / 8);
-      //    this.heatMap.elements.arcGenerator = arcGenerator.call(this, this.settings.smallMultipleSize);
-      //    heatMap.iris.attr('d', heatMap.elements.arcGenerator);
-      //});
-    }
-
-    function layout() {
-      // Set dimensions.
-      this.settings.width = this.elements.parent.node().clientWidth;
-      this.settings.height = this.settings.width / 16 * 9;
-      this.settings.minDimension = Math.min(this.settings.width, this.settings.height);
-      this.settings.smallMultipleSize = this.settings.minDimension / 4; // container
-
-      this.elements.main = this.elements.parent.append('div').classed('animated-heat-map', true); //controls
-
-      this.elements.controls = this.elements.main.append('div').classed('ahm-controls', true).style('height', '40px');
-      this.controls = controls.call(this); // legend
-
-      this.elements.legend = this.elements.main.append('div').classed('ahm-legend', true); // main heat map
-
-      this.elements.heatMap = this.elements.main.append('div').classed('ahm-heat-map', true).classed('ahm-hidden', this.settings.view !== 'heatMap');
-      this.heatMap = {
-        elements: Object.assign({
-          main: this.elements.heatMap
-        }, heatMap.call(this))
-      }; // small multiples
-
-      this.elements.heatMaps = this.elements.main.append('div').classed('ahm-heat-maps', true).classed('ahm-hidden', this.settings.view !== 'heatMaps');
-      this.heatMaps = {
-        elements: {
-          main: this.elements.heatMaps
-        }
-      };
-      window.addEventListener('resize', resize.bind(this));
-    }
-
-    function drawVisits() {
-      var ahm = this;
-      var visits = this.heatMap.elements.visitText.selectAll('text').data(this.data.byVisit).join('text').attr('x', 0).attr('y', function (d, i) {
-        return i * 25;
-      }).attr('fill-opacity', function (d, i) {
-        return 1 - i / 5;
-      }).attr('alignment-baseline', 'middle').text(function (d) {
-        return d.visit;
+      this.visitIndex = 0;
+      this.visit = this.data.sets.visit[this.visitIndex];
+      this.visit_order = this.data.groups.visit[this.visitIndex].visit_order;
+      this.data.visit = this.data.groups.visit[this.visitIndex];
+      this.data.id = this.data.groups.id.map(function (d) {
+        return d.values.slice().sort(function (a, b) {
+          return b.visit_order - a.visit_order;
+        }).find(function (d) {
+          return d.visit_order <= _this.visit_order;
+        });
       });
-      cycle(); // TODO: use chained transitions with transition.on('start', function repeat() {// transitions, recursive shit; })
-
-      function cycle() {
-        var transition = ahm.data.byVisit.reduce(function (prev, next, i) {
-          return prev.transition().duration(ahm.settings.duration).attr('y', function (d, j) {
-            return j * 25 - i * 25;
-          }) // the 5 visits before and after the current visit index (i) should be visible
-          .attr('fill-opacity', function (d, j) {
-            return 1 - Math.abs(i - j) / 5;
-          });
-        }, visits);
-        transition.on('end', cycle);
-      }
-
-      return visits;
+      this.domain = domain.call(this);
+      this.cutoff = typeof this.settings.cutoff === 'number' ? this.settings.cutoff : this.settings.cutoff(this.data.clean.map(function (d) {
+        return d.result;
+      }));
+      this.colorScale = d3.scaleLinear().domain(this.domain).range(['#f7fbff', '#08306b']);
+      this.arcGenerator = d3.arc().innerRadius(this.settings.innerRadius).outerRadius(this.settings.outerRadius);
     }
 
     function ramp(color) {
@@ -349,96 +374,171 @@
       return svg.node();
     }
 
-    function heatMap$1(data, i) {
+    function visits() {
+      var visits = this.containers.visits.selectAll('text').data(this.data.groups.visit).join('text').attr('x', 0).attr('y', function (d, i) {
+        return i * 25;
+      }).attr('fill-opacity', function (d, i) {
+        return 1 - i / 5;
+      }).attr('alignment-baseline', 'middle').text(function (d) {
+        return d.visit;
+      });
+      return visits;
+    }
+
+    //import callTextTransition from './heatMap/textTransition';
+    //import transitionToNextVisit from './heatMap/transitionToNextVisit';
+    function heatMap(data, i) {
       var _this = this;
 
-      var elements = i === undefined ? this.heatMap.elements : data.elements;
-      var arcAngles = d3.pie().sort(null).value(function (d, i) {
+      var pie = d3.pie().sort(null).value(function (d, i) {
         return 1;
-      })(data.values.sort(function (a, b) {
+      });
+      var pieData = pie(data.values.sort(function (a, b) {
         return a.value - b.value;
-      })); // draw arcs
-
-      var iris = elements.g.append('g').selectAll('path').data(arcAngles, function (d) {
+      }));
+      var iris = this.containers.iris.selectAll('path').data(pieData, function (d) {
         return d.data.key;
       }) // pass arc
-      .join('path').classed('ahm-iris', true).attr('d', elements.arcGenerator) // call arc generator
+      .join('path').classed('ahm-iris', true).attr('d', this.arcGenerator) // call arc generator
       .attr('fill', function (d) {
         return _this.colorScale(d.data.value);
       }) // color arcs by result
       .attr('stroke', function (d) {
         return _this.colorScale(d.data.value);
       }); // color arcs by result
-      //const textTransition = callTextTransition.call(this, elements.visitText, data.visit);
-      //const transition = transitionToNextVisit.call(this, iris, data.visit_order);
 
-      elements.pupil.raise();
-      elements.pupilText.raise();
+      this.containers.pupil.raise();
+      this.containers.annotation.raise();
       return {
         data: data,
-        arcAngles: arcAngles,
-        iris: iris //textTransition,
-        //transition,
-
+        pie: pie,
+        pieData: pieData,
+        iris: iris
       };
     }
 
-    function draw() {
-      this.colorScale = d3.scaleLinear().domain(this.domain).range(['#f7fbff', '#08306b']); // Draw legend.
+    function visits$1() {
+      var _this = this;
 
-      this.elements.legend.node().appendChild(legend({
+      this.visits.transition().duration(this.settings.duration).attr('y', function (d, i) {
+        return i * 25 - _this.visitIndex * 25;
+      }).attr('fill-opacity', function (d, i) {
+        return 1 - Math.abs(_this.visitIndex - i) / 5;
+      });
+    }
+
+    function iris() {
+      var _this = this;
+
+      this.heatMap.iris.transition().ease(d3.easeLinear).duration(this.settings.duration).attr('fill', function (d) {
+        var idDatum = _this.data.id.find(function (di) {
+          return di.id === d.data.key;
+        });
+
+        return _this.colorScale(idDatum.result);
+      }).attr('stroke', function (d) {
+        var idDatum = _this.data.id.find(function (di) {
+          return di.id === d.data.key;
+        });
+
+        return _this.colorScale(idDatum.result);
+      });
+    }
+
+    function annotation() {
+      var _this = this;
+
+      this.containers.annotation1.transition().duration(this.settings.duration).text(this.visitIndex === 0 ? 'Baseline' : "".concat(d3.format('.0%')(this.data.id.filter(function (d) {
+        return d.result <= _this.cutoff;
+      }).length / this.data.sets.id.length), " of participants"));
+      this.containers.annotation2.transition().duration(this.settings.duration).text(this.visitIndex === 0 ? '' : 'show improvement'); //this.containers.annotation.transition().on('start', function repeat() {
+      //    const transition = d3.active(this);
+      //    ahm.data.groups.visit.reduce((prev, visit, i) => {
+      //        const next = prev
+      //            .transition()
+      //            .duration(ahm.settings.duration)
+      //            .text(
+      //                `${d3.format('.0%')(
+      //                    visit.values.filter((d) => d.value <= ahm.cutoff).length /
+      //                        ahm.data.sets.id.length
+      //                )} reduction`
+      //            );
+      //        if (i === ahm.data.groups.visit.length - 1) next.on('start', repeat);
+      //        return next;
+      //    }, transition);
+      //});
+    }
+
+    function update() {
+      var _this = this;
+
+      this.visitIndex = this.visitIndex >= this.data.sets.visit.length - 1 ? 0 : this.visitIndex + 1;
+      this.visit = this.data.sets.visit[this.visitIndex];
+      this.visit_order = this.data.groups.visit[this.visitIndex].visit_order;
+      this.data.visit = this.data.groups.visit[this.visitIndex];
+      this.data.id = this.data.groups.id.map(function (d) {
+        return d.values.slice().sort(function (a, b) {
+          return b.visit_order - a.visit_order;
+        }).find(function (d) {
+          return d.visit_order <= _this.visit_order;
+        });
+      });
+      visits$1.call(this);
+      iris.call(this);
+      annotation.call(this); // Pause at the beginning.
+
+      if (this.visitIndex === 0) {
+        this.interval.stop();
+        d3.timeout(function () {
+          _this.interval = d3.interval(function () {
+            update.call(_this);
+          }, _this.settings.duration);
+        }, 1000);
+      } // Pause at the end.
+
+
+      if (this.visitIndex === this.data.sets.visit.length - 1) {
+        this.interval.stop();
+        d3.timeout(function () {
+          _this.interval = d3.interval(function () {
+            update.call(_this);
+          }, _this.settings.duration);
+        }, 5000);
+      }
+    }
+
+    function draw() {
+      var _this = this;
+
+      // Draw legend.
+      this.legend = d3.select(this.containers.legend.node().appendChild(legend({
         color: this.colorScale,
         title: this.settings.measure
-      }));
-      this.heatMap.visitText = drawVisits.call(this); // Draw animated chart.
-
-      Object.assign(this.heatMap, heatMap$1.call(this, this.data.byVisit[0]));
-      var ahm = this;
-      console.log(ahm.heatMap);
-      this.heatMap.elements.pupilText.transition().on('start', function repeat() {
-        var transition = d3.active(this);
-        ahm.data.byVisit.reduce(function (prev, visit, i) {
-          var next = prev.transition().duration(ahm.settings.duration).text("".concat(d3.format('.0%')(visit.values.filter(function (d) {
-            return d.value <= ahm.cutoff;
-          }).length / ahm.data.sets.id.length), " reduction"));
-          if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
-          return next;
-        }, transition);
-      });
-      this.heatMap.iris.transition().ease(d3.easeLinear).on('start', function repeat() {
-        var transition = d3.active(this);
-        ahm.data.byVisit.reduce(function (prev, visit, i) {
-          var next = prev.transition().duration(ahm.settings.duration).attr('fill', function (d) {
-            // Find the full data array of the current participant.
-            var idData = ahm.data.nest.find(function (di) {
-              return di.key === d.data.key;
-            }); // Find the single datum matching the current visit.
-
-            var visitDatum = idData.values.find(function (di) {
-              return di.visit_order === visit.visit_order;
-            }); // If the participant has a result at the current visit, update the color
-            // per the result.
-
-            if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result); // Otherwise maintain the exisiting color.
-            else return this.getAttribute('fill');
-          }).attr('stroke', function (d) {
-            // Find the full data array of the current participant.
-            var idData = ahm.data.nest.find(function (di) {
-              return di.key === d.data.key;
-            }); // Find the single datum matching the current visit.
-
-            var visitDatum = idData.values.find(function (di) {
-              return di.visit_order === visit.visit_order;
-            }); // If the participant has a result at the current visit, update the color
-            // per the result.
-
-            if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result); // Otherwise maintain the exisiting color.
-            else return this.getAttribute('stroke');
-          });
-          if (i === ahm.data.byVisit.length - 1) next.on('start', repeat);
-          return next;
-        }, transition);
-      });
+      })));
+      this.visits = visits.call(this);
+      this.heatMap = heatMap.call(this, this.data.visit);
+      this.interval = d3.interval(function () {
+        update.call(_this);
+      }, this.settings.duration); //function cycle() {
+      //    const transition = ahm.data.groups.visit.reduce((prev, next, i) => {
+      //        return (
+      //            prev
+      //                .transition()
+      //                //.delay(2000)
+      //                .duration(ahm.settings.duration)
+      //                .attr('fill', (d) => {
+      //                    const idData = ahm.data.groups.id.find((di) => di.key === d.data.key);
+      //                    const visitDatum = idData.values.find(
+      //                        (di) => di.visit_order === next.visit_order
+      //                    );
+      //                    if (visitDatum !== undefined) return ahm.colorScale(visitDatum.result);
+      //                    else return ahm.colorScale(d.data.value);
+      //                })
+      //        );
+      //    }, ahm.heatMap.iris);
+      //    //transition.on('end', cycle);
+      //}
+      //this.data.groups.visit.slice(1).forEach((visit) => {
       //    this.heatMap.textTransition = callTextTransition.call(
       //        this,
       //        this.heatMap.textTransition,
@@ -452,23 +552,24 @@
       //});
       //// Draw small multiples.
       //this.heatMaps = smallMultiples.call(this);
-
     }
 
     function animatedHeatMap(data$1) {
       var element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'body';
       var settings$1 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-      var ahm = {
+      var main = {
         data: data$1,
-        elements: {
-          parent: d3.select(element)
-        },
-        settings: Object.assign(settings(), settings$1)
+        element: element,
+        settings: Object.assign(settings(), settings$1),
+        util: util
       };
-      layout.call(ahm);
-      data.call(ahm);
-      draw.call(ahm);
-      return ahm;
+      main.containers = layout.call(main); // add elements to DOM
+
+      data.call(main); // mutate and structure data
+
+      draw.call(main); // run the animation
+
+      return main;
     }
 
     return animatedHeatMap;
