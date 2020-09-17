@@ -3,18 +3,17 @@ export default function annotation() {
         .transition()
         .duration(this.settings.duration)
         .text(
-            this.visitIndex === 0 ? 'Baseline' :
-                `${d3.format('.0%')(
-                    this.data.id.filter((d) => d.result <= this.cutoff).length /
-                        this.data.sets.id.length
-                )} of participants`
+            this.visitIndex === 0
+                ? 'Baseline'
+                : `${d3.format('.0%')(
+                      this.data.id.filter((d) => d.result <= this.cutoff).length /
+                          this.data.sets.id.length
+                  )} of participants`
         );
     this.containers.annotation2
         .transition()
         .duration(this.settings.duration)
-        .text(
-            this.visitIndex === 0 ? '' : 'show improvement'
-        );
+        .text(this.visitIndex === 0 ? '' : 'show improvement');
 
     //this.containers.annotation.transition().on('start', function repeat() {
     //    const transition = d3.active(this);
@@ -33,5 +32,4 @@ export default function annotation() {
     //        return next;
     //    }, transition);
     //});
-
 }

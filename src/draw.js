@@ -5,12 +5,16 @@ import update from './draw/update';
 
 export default function draw() {
     // Draw legend.
-    this.legend = d3.select(this.containers.legend.node().appendChild(
-        makeLegend({
-            color: this.colorScale,
-            title: this.settings.measure,
-        })
-    ));
+    this.legend = d3.select(
+        this.containers.legend.node().appendChild(
+            makeLegend({
+                color: this.colorScale,
+                title: this.settings.measure,
+                width: this.settings.width / 4,
+                height: this.settings.height / 16,
+            })
+        )
+    );
 
     this.visits = drawVisits.call(this);
     this.heatMap = drawHeatMap.call(this, this.data.visit);

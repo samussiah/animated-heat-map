@@ -7,9 +7,7 @@ export default function heatMap(data, i) {
         .sort(null)
         .value((d, i) => 1);
 
-    const pieData = pie(
-        data.values.sort((a, b) => a.value - b.value)
-    );
+    const pieData = pie(data.values.sort((a, b) => a.value - b.value));
 
     const iris = this.containers.iris
         .selectAll('path')
