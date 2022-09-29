@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/samussiah/animated-heat-map#readme",
   "dependencies": {
-    "d3": "^5.16.0"
+    "d3": "^7.6.1"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
